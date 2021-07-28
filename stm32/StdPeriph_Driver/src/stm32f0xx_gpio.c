@@ -155,8 +155,8 @@ void GPIO_DeInit(GPIO_TypeDef* GPIOx)
   * @param  GPIOx: where x can be (A, B, C, D or F) to select the GPIO peripheral.
   * @param  GPIO_InitStruct: pointer to a GPIO_InitTypeDef structure that contains
   *         the configuration information for the specified GPIO peripheral.
-  * @note   The configured pins can be: GPIO_Pin_0 -> GPIO_Pin_15 for GPIOA, GPIOB and GPIOC,
-  *         GPIO_Pin_0 -> GPIO_Pin_2 for GPIOD, GPIO_Pin_0 -> GPIO_Pin_3 for GPIOF.
+  * @note   The configured pins can be: GPIO_ODR_0 -> GPIO_ODR_15 for GPIOA, GPIOB and GPIOC,
+  *         GPIO_ODR_0 -> GPIO_ODR_2 for GPIOD, GPIO_ODR_0 -> GPIO_ODR_3 for GPIOF.
   * @retval None
   */
 void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
@@ -232,7 +232,7 @@ void GPIO_StructInit(GPIO_InitTypeDef* GPIO_InitStruct)
   *         until the next reset.
   * @param  GPIOx: where x can be (A or B) to select the GPIO peripheral.
   * @param  GPIO_Pin: specifies the port bit to be written.
-  *   This parameter can be any combination of GPIO_Pin_x where x can be (0..15).
+  *   This parameter can be any combination of GPIO_ODR_x where x can be (0..15).
   * @retval None
   */
 void GPIO_PinLockConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
@@ -276,7 +276,7 @@ void GPIO_PinLockConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
   * @brief  Reads the specified input port pin.
   * @param  GPIOx: where x can be (A, B, C, D or F) to select the GPIO peripheral.
   * @param  GPIO_Pin: specifies the port bit to read.
-  * @note   This parameter can be GPIO_Pin_x where x can be:(0..15) for GPIOA, 
+  * @note   This parameter can be GPIO_ODR_x where x can be:(0..15) for GPIOA, 
   *         GPIOB or GPIOC,(0..2) for GPIOD and(0..3) for GPIOF.
   * @retval The input port pin value.
   */
@@ -316,7 +316,7 @@ uint16_t GPIO_ReadInputData(GPIO_TypeDef* GPIOx)
   * @brief  Reads the specified output data port bit.
   * @param  GPIOx: where x can be (A, B, C, D or F) to select the GPIO peripheral.
   * @param  GPIO_Pin: Specifies the port bit to read.
-  * @note   This parameter can be GPIO_Pin_x where x can be:(0..15) for GPIOA, 
+  * @note   This parameter can be GPIO_ODR_x where x can be:(0..15) for GPIOA, 
   *         GPIOB or GPIOC,(0..2) for GPIOD and(0..3) for GPIOF.
   * @retval The output port pin value.
   */
@@ -356,7 +356,7 @@ uint16_t GPIO_ReadOutputData(GPIO_TypeDef* GPIOx)
   * @brief  Sets the selected data port bits.
   * @param  GPIOx: where x can be (A, B, C, D or F) to select the GPIO peripheral.
   * @param  GPIO_Pin: specifies the port bits to be written.
-  * @note   This parameter can be GPIO_Pin_x where x can be:(0..15) for GPIOA, 
+  * @note   This parameter can be GPIO_ODR_x where x can be:(0..15) for GPIOA, 
   *         GPIOB or GPIOC,(0..2) for GPIOD and(0..3) for GPIOF.
   * @retval None
   */
@@ -373,7 +373,7 @@ void GPIO_SetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
   * @brief  Clears the selected data port bits.
   * @param  GPIOx: where x can be (A, B, C, D or F) to select the GPIO peripheral.
   * @param  GPIO_Pin: specifies the port bits to be written.
-  * @note   This parameter can be GPIO_Pin_x where x can be: (0..15) for GPIOA, 
+  * @note   This parameter can be GPIO_ODR_x where x can be: (0..15) for GPIOA, 
   *         GPIOB or GPIOC,(0..2) for GPIOD and(0..3) for GPIOF.
   * @retval None
   */
@@ -394,7 +394,7 @@ void GPIO_ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
   *   This parameter can be one of the BitAction enumeration values:
   *     @arg Bit_RESET: to clear the port pin
   *     @arg Bit_SET: to set the port pin
-  * @note   The GPIO_Pin parameter can be GPIO_Pin_x where x can be: (0..15) for GPIOA, 
+  * @note   The GPIO_Pin parameter can be GPIO_ODR_x where x can be: (0..15) for GPIOA, 
   *         GPIOB or GPIOC,(0..2) for GPIOD and(0..3) for GPIOF.  
   * @retval None
   */
@@ -476,7 +476,7 @@ void GPIO_PinAFConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_PinSource, uint8_t GPIO
 
   /* Check the parameters */
   assert_param(IS_GPIO_LIST_PERIPH(GPIOx));
-  assert_param(IS_GPIO_PIN_SOURCE(GPIO_PinSource));
+  assert_param(IS_GPIO_ODR_SOURCE(GPIO_PinSource));
   assert_param(IS_GPIO_AF(GPIO_AF));
 
   temp = ((uint32_t)(GPIO_AF) << ((uint32_t)((uint32_t)GPIO_PinSource & (uint32_t)0x07) * 4));

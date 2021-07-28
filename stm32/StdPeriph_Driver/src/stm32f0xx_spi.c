@@ -46,7 +46,7 @@
             (++) Configure the DMA using DMA_Init() function.
             (++) Active the needed channel Request using SPI_I2S_DMACmd() function.
    
-        (#) Enable the SPI using the SPI_Cmd() function or enable the I2S using
+        (#) Enable the SPI using the _send_cmd() function or enable the I2S using
             I2S_Cmd().
    
         (#) Enable the DMA using the DMA_Cmd() function when using DMA mode. 
@@ -430,7 +430,7 @@ void I2S_Init(SPI_TypeDef* SPIx, I2S_InitTypeDef* I2S_InitStruct)
   *         This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void SPI_Cmd(SPI_TypeDef* SPIx, FunctionalState NewState)
+void _send_cmd(SPI_TypeDef* SPIx, FunctionalState NewState)
 {
   /* Check the parameters */
   assert_param(IS_SPI_ALL_PERIPH(SPIx));
@@ -780,7 +780,7 @@ uint16_t SPI_I2S_ReceiveData16(SPI_TypeDef* SPIx)
              Slave Management, Peripheral Mode and CRC Polynomial values using the SPI_Init()
              function.
          (#) Enable the CRC calculation using the SPI_CalculateCRC() function.
-         (#) Enable the SPI using the SPI_Cmd() function
+         (#) Enable the SPI using the _send_cmd() function
          (#) Before writing the last data to the TX buffer, set the CRCNext bit using the 
              SPI_TransmitCRC() function to indicate that after transmission of the last 
              data, the CRC should be transmitted.
@@ -819,10 +819,10 @@ uint16_t SPI_I2S_ReceiveData16(SPI_TypeDef* SPIx)
        CRC calculation.
 
     -@- To clear the CRC, follow the procedure below:
-       (#@) Disable SPI using the SPI_Cmd() function
+       (#@) Disable SPI using the _send_cmd() function
        (#@) Disable the CRC calculation using the SPI_CalculateCRC() function.
        (#@) Enable the CRC calculation using the SPI_CalculateCRC() function.
-       (#@) Enable SPI using the SPI_Cmd() function.
+       (#@) Enable SPI using the _send_cmd() function.
 
 @endverbatim
   * @{
@@ -1214,7 +1214,7 @@ FlagStatus SPI_I2S_GetFlagStatus(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG)
   *           a read operation to SPI_SR register (SPI_I2S_GetFlagStatus()).
   * @note     MODF (Mode Fault) flag is cleared by software sequence: a read/write 
   *           operation to SPI_SR register (SPI_I2S_GetFlagStatus()) followed by
-  *           a write operation to SPI_CR1 register (SPI_Cmd() to enable the SPI).
+  *           a write operation to SPI_CR1 register (_send_cmd() to enable the SPI).
   * @retval None
   */
 void SPI_I2S_ClearFlag(SPI_TypeDef* SPIx, uint16_t SPI_I2S_FLAG)

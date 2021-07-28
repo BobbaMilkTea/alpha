@@ -2,82 +2,85 @@
 #include "stm32f0_discovery.h"
 #include <stdint.h>
 #include <stdio.h>
-
 #include "display.h"
 
-// This array will be used with dma_display1() and dma_display2() to mix
-// commands that set the cursor location at zero and 64 with characters.
-//
-uint16_t dispmem[34] = {
-        0x080 + 0,
-        0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220,
-        0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220,
-        0x080 + 64,
-        0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220,
-        0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220, 0x220,
-};
+#define DISP_RS GPIO_ODR_1
+#define DISP_RW GPIO_ODR_2
+#define DISP_EN GPIO_ODR_3
 
-void _send_cmd(char b) {
-	while((SPI1->SR & SPI_SR_TXE) == 0) {
-    	;
-    }
-	SPI1->DR = b;
+static void _micro_wait(unsigned int n) {
+    asm(    "        movs r0,%0\n"
+            "repeat: sub r0,#83\n"
+            "        bgt repeat\n" : : "r"(n*1000) : "r0", "cc");
 }
 
-void _send_data(char b) {
-	while((SPI1->SR & SPI_SR_TXE) == 0) {
-		;
-	}
-	SPI1->DR = 0x200 + b;
+static void _send_parallel_four_bit(char b, int mode) {
+	GPIOA->ODR &= ~(DISP_RS);
+	GPIOA->ODR = (mode << 1) | ((b & 0x0f) << 4);
+	GPIOA->ODR |= DISP_EN;
+	_micro_wait(1000);
+	GPIOA->ODR &= ~DISP_EN;
 }
 
-void init_display() {
+static void _send_cmd(char b) {
+	_send_parallel_four_bit(b>>4, 0);
+	_send_parallel_four_bit(b, 0);
+	_micro_wait(10000);
+}
+
+static void _send_data(char b) {
+	_send_parallel_four_bit(b>>4, 1);
+	_send_parallel_four_bit(b, 1);
+	_micro_wait(100);
+}
+
+static void _shift_cursor(int row, int col)
+{
+    if (row == 0)
+    	col |= 0x80;
+    if (row == 1)
+        col |= 0xC0;
+    _send_cmd(col);
+}
+
+
+static void _send_init_display_cmd() {
+	// configure 4-bit mode
+	_micro_wait(50000);
+	_send_parallel_four_bit(0x3, 0);
+	_send_parallel_four_bit(0x3, 0);
+	_send_parallel_four_bit(0x3, 0);
+	_send_parallel_four_bit(0x2, 0);
+	// configure control bits
+	_send_cmd(0x6);
+	_send_cmd(0x2);
+	_send_cmd(0xc);
+}
+
+void display_init() {
+	// enable clock for GPIOA
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-	GPIOA->MODER &= ~(GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_0 | GPIO_MODER_MODER7_0);
-	GPIOA->MODER |= GPIO_MODER_MODER4_0 | GPIO_MODER_MODER5_1 | GPIO_MODER_MODER7_1;
-	GPIOA->AFR[0] &= ~(GPIO_AFRL_AFRL5 | GPIO_AFRL_AFRL7);
-	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
-	SPI1->CR1 |= SPI_CR1_MSTR | SPI_CR1_BR_1 | SPI_CR1_BR_0; //highest baud rate is fPCLK/16 or 250 kHz
-	SPI1->CR1 |= SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE;
-	SPI1->CR2 |= SPI_CR2_DS_3 | SPI_CR2_DS_0 | SPI_CR2_SSOE | SPI_CR2_NSSP;
-	SPI1->CR1 |= SPI_CR1_SPE;
+	// set PA0-7 to output mode
+	GPIOA->MODER &= ~(GPIO_MODER_MODER1_1 | GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1 | GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1 | GPIO_MODER_MODER6_1 | GPIO_MODER_MODER7_1);
+	GPIOA->MODER |= GPIO_MODER_MODER1_0 | GPIO_MODER_MODER2_0 | GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0 | GPIO_MODER_MODER5_0 | GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_0;
+	// set to write mode: 0
+	GPIOA->ODR &= ~DISP_RW;
+	_send_init_display_cmd();
 }
 
-void _dma_display_transfer() {
-	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-	DMA1_Channel5->CCR &= ~DMA_CCR_EN;
-	DMA1_Channel5->CMAR = (uint32_t)dispmem;
-	DMA1_Channel5->CPAR = &(SPI1->DR);
-	DMA1_Channel5->CNDTR = sizeof dispmem;
-	DMA1_Channel5->CCR |= DMA_CCR_DIR | DMA_CCR_MINC | DMA_CCR_DIR;
-	DMA1_Channel5->CCR &= ~(DMA_CCR_MSIZE | DMA_CCR_PSIZE | DMA_CCR_PL);
-	SPI1->CR2 |= SPI_CR2_TXDMAEN;
-	DMA1_Channel5->CCR |= DMA_CCR_EN;
+void _clear_row(int row) {
+	_shift_cursor(row, 0);
+	for (int i = 0; i < 16; i++) {
+		_send_data(' ');
+	}
 }
 
-void dma_display1(const char *s) {
-	_send_cmd(0x80 + 0);
-	int x;
-	for(x=0; x<16; x+=1)
-		if (s[x])
-			dispmem[x+1] = s[x] | 0x200;
-		else
-			break;
-	for(   ; x<16; x+=1)
-		dispmem[x+1] = 0x220;
-	_dma_display_transfer();
-}
+void display_msg(const char* text, int row) {
+	_clear_row(row);
+	_shift_cursor(row, 0);
 
-void dma_display2(const char *s) {
-	_send_cmd(0x80 + 0);
-	int x;
-	for(x=17; x<33; x+=1)
-		if (s[x])
-			dispmem[x+1] = s[x] | 0x200;
-		else
-			break;
-	for(   ; x<33; x+=1)
-		dispmem[x+1] = 0x220;
-	_dma_display_transfer();
+	int i = 0;
+	while ((*text != '\0') && (i++ < 16)) {
+		_send_data(*(text++));
+	}
 }
