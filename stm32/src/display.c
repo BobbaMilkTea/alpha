@@ -3,16 +3,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "display.h"
+#include "util.h"
 
 #define DISP_RS GPIO_ODR_1
 #define DISP_RW GPIO_ODR_2
 #define DISP_EN GPIO_ODR_3
-
-static void _micro_wait(unsigned int n) {
-    asm(    "        movs r0,%0\n"
-            "repeat: sub r0,#83\n"
-            "        bgt repeat\n" : : "r"(n*1000) : "r0", "cc");
-}
 
 static void _send_parallel_four_bit(char b, int mode) {
 	GPIOA->ODR &= ~(DISP_RS);
@@ -60,7 +55,7 @@ static void _send_init_display_cmd() {
 void display_init() {
 	// enable clock for GPIOA
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-	// set PA0-7 to output mode
+	// set PA1-7 to output mode
 	GPIOA->MODER &= ~(GPIO_MODER_MODER1_1 | GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1 | GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1 | GPIO_MODER_MODER6_1 | GPIO_MODER_MODER7_1);
 	GPIOA->MODER |= GPIO_MODER_MODER1_0 | GPIO_MODER_MODER2_0 | GPIO_MODER_MODER3_0 | GPIO_MODER_MODER4_0 | GPIO_MODER_MODER5_0 | GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_0;
 	// set to write mode: 0
