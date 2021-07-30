@@ -1,6 +1,6 @@
 #include "stm32f0xx.h"
 #include "stm32f0_discovery.h"
-#include "util.h"
+#include "include/util.h"
 
 void micro_wait(unsigned int n) {
     asm(    "        movs r0,%0\n"

@@ -1,9 +1,9 @@
 #include "stm32f0xx.h"
 #include "stm32f0_discovery.h"
-#include <stdint.h>
-#include <stdio.h>
-#include "display.h"
-#include "util.h"
+#include "stdint.h"
+#include "stdio.h"
+#include "include/display.h"
+#include "include/util.h"
 
 #define DISP_RS GPIO_ODR_1
 #define DISP_RW GPIO_ODR_2
@@ -13,20 +13,20 @@ static void _send_parallel_four_bit(char b, int mode) {
 	GPIOA->ODR &= ~(DISP_RS);
 	GPIOA->ODR = (mode << 1) | ((b & 0x0f) << 4);
 	GPIOA->ODR |= DISP_EN;
-	_micro_wait(1000);
+	micro_wait(1000);
 	GPIOA->ODR &= ~DISP_EN;
 }
 
 static void _send_cmd(char b) {
 	_send_parallel_four_bit(b>>4, 0);
 	_send_parallel_four_bit(b, 0);
-	_micro_wait(10000);
+	micro_wait(10000);
 }
 
 static void _send_data(char b) {
 	_send_parallel_four_bit(b>>4, 1);
 	_send_parallel_four_bit(b, 1);
-	_micro_wait(100);
+	micro_wait(100);
 }
 
 static void _shift_cursor(int row, int col)
@@ -41,7 +41,7 @@ static void _shift_cursor(int row, int col)
 
 static void _send_init_display_cmd() {
 	// configure 4-bit mode
-	_micro_wait(50000);
+	micro_wait(50000);
 	_send_parallel_four_bit(0x3, 0);
 	_send_parallel_four_bit(0x3, 0);
 	_send_parallel_four_bit(0x3, 0);
